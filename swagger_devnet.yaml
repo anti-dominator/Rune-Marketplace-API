@@ -1,0 +1,338 @@
+openapi: 3.0.1
+
+info:
+  title: Bitmap Community Marketplace API
+  description: "Backend implementation marketplace api endpoints focked ordinals bot marketplace api."
+  version: 0.0.1
+
+servers:
+  - url: "https://ordinals-marketplace-api-backend.onrender.com/api"
+  - url: "http://localhost:9000/api"
+
+tags:
+  - name: Listing
+  - name: Offer
+
+paths:
+  /create-listing:
+    post:
+      summary: This endpoint to list one ordinal for sale on the marketplace.
+      description: This endpoint is used to list one or more ordinals for sale on the marketplace. The endpoint returns a Partially Signed Bitcoin Transaction (PSBT) which the owner must sign. If someone buys the ordinal, the buyer must supply the unspent transaction output (UTXO) covering the ordinal's price and any applicable fees. The seller's signature is required only during the initial listing, while only the buyer's signature is necessary for completing the purchase.
+      tags:
+        - Listing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListing"
+      responses:
+        "200":
+          description: Create Listing Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Create Listing failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /save-listing:
+    post:
+      summary: Save listing is part of the create listing process.
+      description: Save listing is part of the create listing process. create-listing end point returns a psbt which is signed by the client wallet, once signed the signed psbt needs to be saved in the listing database by calling /save-listing end point.
+      tags:
+        - Listing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveListing"
+      responses:
+        "200":
+          description: Save Listing Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Save Listing failed!
+          content:
+            application/json:
+              schema:
+                type: string
+  /relist:
+    post:
+      summary: This endpoint updates an existing marketplace listing with a new price.
+      description: This endpoint updates an existing marketplace listing with a new price. Calling the endpoint returns a psbt which needs to be signed by the seller's ordinal wallet address. Once signed the signed psbt needs to be returned by calling /marketplace/confirm-relist. if confirm-relist is not called then the existing ordinal listing remains unchanged.
+      tags:
+        - Listing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListing"
+      responses:
+        "200":
+          description: Update Listing Request Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Update Listing Request failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /confirm-relist:
+    post:
+      summary: This endpoint updates an existing marketplace listing with a new price.
+      description: This endpoint updates an existing marketplace listing with a new price. Calling the endpoint returns a psbt which needs to be signed by the seller's ordinal wallet address. Once signed the signed psbt needs to be returned by calling /marketplace/confirm-relist. if confirm-relist is not called then the existing ordinal listing remains unchanged.
+      tags:
+        - Listing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmUpdateListing"
+      responses:
+        "200":
+          description: Delete Listing Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Delete Listing failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /delist:
+    post:
+      summary: This endpoint deletes an existing marketplace listing.
+      description: This endpoint can be used to delete an ordinal listing from the marketplace. Deleting a listing requires the seller to create a transaction by calling /delist sign the transaction and then need to send the signed transaction by making a call to /confirm-delist , the signed transaction transfers the ordinal to the seller so that the original ordinal UTXO is consumed and not valid anymore. This is to ensure that the old, signed transaction cannot be used anymore to buy the ordinal.
+      tags:
+        - Listing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteListing"
+      responses:
+        "200":
+          description: Update Listing Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Update Listing failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /create-offer:
+    post:
+      summary: This endpoint is designed for creating an transaction to purchase an ordinal listed for sale on the marketplace.
+      description: Platform Cost => A platform fee is applied only when an ordinal is sold. It is not charged for listing an ordinal. The current fee is 1% of sale amount charged to the seller. Upon usage, it generates a Partially Signed Bitcoin Transaction (PSBT) encoded in base64. This PSBT must be signed by the individual intending to buy the ordinal.
+      tags:
+        - Offer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOffer"
+      responses:
+        "200":
+          description: Create Offer Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Create Offer failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /submit-offer:
+    post:
+      summary: This endpoint is designed for completing the purchase of an ordinal.
+      description: Platform Cost => A platform fee is applied only when an ordinal is sold. It is not charged for listing an ordinal. The current fee is 1% of sale amount charged to the seller. Upon usage, it generates a Partially Signed Bitcoin Transaction (PSBT) encoded in base64. This PSBT must be signed by the individual intending to buy the ordinal.
+      tags:
+        - Offer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitOffer"
+      responses:
+        "200":
+          description: Submit Offer Success!
+          content:
+            application/json:
+              schema:
+                type: string
+        "500":
+          description: Submit Offer failed!
+          content:
+            application/json:
+              schema:
+                type: string
+
+components:
+  schemas:
+    CreateListing:
+      type: object
+      properties:
+        sellerOrdinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        sellerOrdinalPrice:
+          type: string
+          example: 100000
+        sellerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        sellerOrdinalPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+      required:
+        - sellerOrdinalId
+        - sellerOrdinalPrice
+        - sellerPaymentAddress
+        - sellerOrdinalPublicKey
+
+    SaveListing:
+      type: object
+      properties:
+        sellerOrdinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        sellerOrdinalPrice:
+          type: string
+          example: 100000
+        sellerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        sellerOrdinalPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+        signedListingPSBT:
+          type: string
+          example: 70736274ff01005e020000000170a6e661c44956513b2d287991dcfc64a502d0ee5c44783e7e714d7ac2f4d7bf0100000000ffffffff01a0860100000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c000000000001012b22020000000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c0113408a2e733456fc69d66ca12a17807a3037416fc2debd7156906c08c74ae500e4c412dd9f7fedca14dbf07b0bcc8cf00b24dc66a22921461a18f1d41a03b369de2c011720cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d0000
+      required:
+        - sellerOrdinalId
+        - sellerOrdinalPrice
+        - sellerPaymentAddress
+        - sellerOrdinalPublicKey
+        - signedListingPSBT
+
+    UpdateListing:
+      type: object
+      properties:
+        sellerOrdinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        sellerOrdinalPrice:
+          type: string
+          example: 100000
+        sellerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        sellerOrdinalPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+      required:
+        - sellerOrdinalId
+        - sellerOrdinalPrice
+        - sellerPaymentAddress
+        - sellerOrdinalPublicKey
+
+    ConfirmUpdateListing:
+      type: object
+      properties:
+        sellerOrdinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        sellerOrdinalPrice:
+          type: string
+          example: 200000
+        sellerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        sellerOrdinalPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+        signedListingPSBT:
+          type: string
+          example: 70736274ff01005e020000000170a6e661c44956513b2d287991dcfc64a502d0ee5c44783e7e714d7ac2f4d7bf0100000000ffffffff01a0860100000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c000000000001012b22020000000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c0113408a2e733456fc69d66ca12a17807a3037416fc2debd7156906c08c74ae500e4c412dd9f7fedca14dbf07b0bcc8cf00b24dc66a22921461a18f1d41a03b369de2c011720cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d0000
+      required:
+        - sellerOrdinalId
+        - sellerOrdinalPrice
+        - sellerPaymentAddress
+        - sellerOrdinalPublicKey
+        - signedListingPSBT
+
+    DeleteListing:
+      type: object
+      properties:
+        sellerOrdinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        sellerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        sellerOrdinalPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+      required:
+        - sellerOrdinalId
+        - sellerPaymentAddress
+        - sellerOrdinalPublicKey
+
+    CreateOffer:
+      type: object
+      properties:
+        ordinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        buyerPaymentAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        buyerOrdinalAddress:
+          type: string
+          example: tb1p0sd5xq6sz0eg3r9j5df0qk38pgnuqreav2qqtq5jfvwpk3yhzuxqjyttjy
+        buyerPaymentPublicKey:
+          type: string
+          example: 03cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d
+        feeRate:
+          type: string
+          example: 270
+      required:
+        - ordinalId
+        - buyerPaymentAddress
+        - buyerOrdinalAddress
+        - buyerPaymentPublicKey
+        - feeRate
+
+    SubmitOffer:
+      type: object
+      properties:
+        ordinalId:
+          type: string
+          example: bfd7f4c27a4d717e3e78445ceed002a564fcdc9179282d3b515649c461e6a670i0
+        signedBuyerPSBT:
+          type: string
+          example: 70736274ff0100dd0200000002b6f4877aedd1372c2d20195d4bcd50b8c43b6321c9af73f05f5a5898141e56eb0200000000ffffffffb97d05f20c535e66815e6d9b490c7916ec0262c7a139318f79da93073d4cd3450000000000ffffffff0322020000000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170cd0070000000000002251205fdf7371d5711d7c2f3076973c1961413f5ee64d27d05488640374a309e0c726d7961a00000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c000000000001012bd19d0000000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c01134064179658e2fcb34461168716427929e30b58cfd72abe8f89aaa787c6dcabef314e45f62c64cb33640f5dbc1ea2c54b4541492542603ffb0a5d71dc890edaea76011720cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d0001012b80841e00000000002251207c1b43035013f2888cb2a352f05a270a27c00f3d62800582924b1c1b4497170c0113409370ac27c866a1f89c4e886f28ca8d8ccaf26b294ff407c2e74dde72e82b1b648e7905f91ac4fb94c1d0b851dfbc25dc1b1b4765f51709a07c66f038732dc874011720cde4d7fa3f66b13c61279a3a78fd3623428bc69d7e65c770a0fdfd6ea3b0758d00000000
+      required:
+        - ordinalId
+        - signedBuyerPSBT
